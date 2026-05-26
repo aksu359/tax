@@ -303,12 +303,52 @@
       line-height: 1.65;
     }
 
+    .notice h2 {
+      margin: 0 0 12px;
+      font-size: 18px;
+      color: #78350f;
+    }
+
     .notice p {
       margin: 0;
     }
 
     .notice p + p {
       margin-top: 8px;
+    }
+
+    .toss-guide {
+      margin-top: 16px;
+      padding: 18px;
+      border-radius: 18px;
+      background: #ffffff;
+      border: 1px solid #fde68a;
+      color: #4b5563;
+    }
+
+    .toss-guide h3 {
+      margin: 0 0 12px;
+      font-size: 17px;
+      color: #111827;
+    }
+
+    .toss-guide ol {
+      margin: 0;
+      padding-left: 20px;
+      line-height: 1.75;
+    }
+
+    .toss-guide li + li {
+      margin-top: 4px;
+    }
+
+    .toss-guide p {
+      margin: 14px 0 0;
+      line-height: 1.65;
+    }
+
+    .toss-guide strong {
+      color: #111827;
     }
 
     @media (max-width: 860px) {
@@ -360,7 +400,7 @@
   <main class="wrap">
     <header>
       <h1>해외주식 예상 양도소득세 계산기</h1>
-      <p>현재 보유 중인 해외주식의 예상 양도소득세를 계산해보세요.</p>
+      <p>현재 보유 중인 해외주식을 지금 매도한다고 가정하고 예상 양도소득세를 계산해보세요.</p>
     </header>
 
     <section class="layout">
@@ -431,14 +471,43 @@
     </section>
 
     <section class="notice">
+      <h2>신고 및 납부 안내</h2>
+
       <p>
+        본 계산기는 현재 보유 중인 해외주식을 지금 매도한다고 가정한 참고용 예상 계산기입니다.
         실제 세금 신고 시에는 증권사 거래내역, 환율 적용 기준, 수수료, 기타 필요경비,
         국세청 신고 기준에 따라 금액이 달라질 수 있습니다.
       </p>
+
       <p>
         해외주식 양도소득세는 일반적으로 해당 연도에 실현한 손익을 합산하여
         다음 해 5월에 신고·납부합니다.
       </p>
+
+      <div class="toss-guide">
+        <h3>토스증권에서 신고대행 신청하는 방법</h3>
+
+        <ol>
+          <li>토스 앱을 엽니다.</li>
+          <li>하단 또는 홈 화면에서 <strong>주식</strong> 또는 <strong>증권</strong> 메뉴로 들어갑니다.</li>
+          <li>검색창에 <strong>해외주식 양도소득세</strong>를 검색합니다.</li>
+          <li><strong>해외주식 양도소득세 신고대행</strong> 안내 화면으로 들어갑니다.</li>
+          <li>예상 세액과 신고 대상 여부를 확인합니다.</li>
+          <li>토스증권에서만 거래했다면 별도 서류 없이 안내에 따라 신청을 완료합니다.</li>
+          <li>다른 증권사 거래내역이 있다면 해당 증권사의 해외주식 양도소득세 계산내역 또는 거래내역 서류를 첨부합니다.</li>
+          <li>신고가 완료되면 토스 앱 알림으로 납부 금액 안내를 확인하고 납부를 진행합니다.</li>
+        </ol>
+
+        <p>
+          토스증권 앱에서 신고대행을 신청하면, 토스증권 거래내역은 별도 서류 없이 신고대행에 반영될 수 있습니다.
+          다른 증권사 거래내역이 있는 경우에는 필요한 서류를 업로드하면 신고대행 과정에서 합산 신고에 반영될 수 있습니다.
+        </p>
+
+        <p>
+          신고대행 신청 기간과 대상 조건은 매년 달라질 수 있으므로,
+          실제 신고 전에는 토스증권 앱 또는 토스증권 공지사항에서 최신 안내를 확인하세요.
+        </p>
+      </div>
     </section>
   </main>
 
