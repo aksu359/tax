@@ -1,684 +1,692 @@
-from pathlib import Path
-
-html = r'''<!DOCTYPE html>
-<html lang="ko" data-theme="light">
+<!DOCTYPE html>
+<html lang="ko">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ETF Ratio & Tax Lab</title>
+  <title>해외주식 양도소득세</title>
+
   <style>
     :root {
-      --bg: #f6f7fb;
-      --card: rgba(255,255,255,0.92);
-      --card-solid: #ffffff;
-      --text: #111827;
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --text: #1f2937;
       --muted: #6b7280;
       --border: #e5e7eb;
       --primary: #2563eb;
-      --accent: #7c3aed;
-      --red: #ef4444;
-      --blue: #3b82f6;
-      --green-bg: #ecfdf5;
-      --green-text: #047857;
-      --orange-bg: #fff7ed;
-      --orange-text: #c2410c;
-      --shadow: 0 24px 60px rgba(15, 23, 42, 0.10);
+      --primary-dark: #1d4ed8;
+      --danger: #dc2626;
+      --danger-bg: #fef2f2;
+      --success: #059669;
+      --shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
     }
 
-    html[data-theme="dark"] {
-      --bg: #09090f;
-      --card: rgba(17,24,39,0.88);
-      --card-solid: #111827;
-      --text: #f9fafb;
-      --muted: #9ca3af;
-      --border: #283244;
-      --primary: #60a5fa;
-      --accent: #a78bfa;
-      --red: #f87171;
-      --blue: #60a5fa;
-      --green-bg: rgba(6,95,70,0.24);
-      --green-text: #6ee7b7;
-      --orange-bg: rgba(154,52,18,0.24);
-      --orange-text: #fdba74;
-      --shadow: 0 24px 70px rgba(0,0,0,0.35);
+    * {
+      box-sizing: border-box;
     }
-
-    * { box-sizing: border-box; }
 
     body {
       margin: 0;
-      min-height: 100vh;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Pretendard, Roboto, Arial, sans-serif;
-      background:
-        radial-gradient(circle at top left, rgba(37,99,235,.16), transparent 34%),
-        radial-gradient(circle at top right, rgba(124,58,237,.14), transparent 32%),
-        var(--bg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", Arial, sans-serif;
       color: var(--text);
+      background: linear-gradient(180deg, #eef4ff 0%, var(--bg) 45%, #ffffff 100%);
+      min-height: 100vh;
+    }
+
+    .container {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 48px 0;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    header h1 {
+      margin: 0 0 10px;
+      font-size: clamp(28px, 5vw, 44px);
+      letter-spacing: -0.04em;
+      color: #0f172a;
+    }
+
+    header p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+      gap: 22px;
+      align-items: start;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(229, 231, 235, 0.8);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 24px;
+    }
+
+    .card h2 {
+      margin: 0 0 18px;
+      font-size: 20px;
+      letter-spacing: -0.02em;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .field.full {
+      grid-column: 1 / -1;
+    }
+
+    label {
+      font-weight: 700;
+      font-size: 13px;
+      color: #374151;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 13px 14px;
+      font-size: 15px;
+      color: var(--text);
+      background: #fbfdff;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+
+    textarea {
+      min-height: 78px;
+      resize: vertical;
+    }
+
+    input:focus,
+    textarea:focus {
+      border-color: rgba(37, 99, 235, 0.65);
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.11);
+      background: #ffffff;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 14px;
+      padding: 13px 16px;
+      font-weight: 800;
+      font-size: 14px;
+      cursor: pointer;
+      transition: transform 0.12s ease, background 0.12s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      flex: 1;
+      min-width: 160px;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+    }
+
+    .btn-ghost {
+      background: #eef2ff;
+      color: #3730a3;
+    }
+
+    .btn-danger {
+      background: var(--danger-bg);
+      color: var(--danger);
+    }
+
+    .summary-card {
+      position: sticky;
+      top: 18px;
+    }
+
+    .tax-highlight {
+      padding: 20px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #1e40af, #2563eb);
+      color: white;
+      margin-bottom: 18px;
+    }
+
+    .tax-highlight span {
+      display: block;
+      font-size: 13px;
+      opacity: 0.85;
+      margin-bottom: 8px;
+    }
+
+    .tax-highlight strong {
+      display: block;
+      font-size: clamp(30px, 6vw, 42px);
+      letter-spacing: -0.04em;
+      line-height: 1;
+    }
+
+    .result-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .result-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      padding: 13px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .result-row:last-child {
+      border-bottom: 0;
+    }
+
+    .result-row .label {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .result-row .value {
+      font-weight: 800;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .positive {
+      color: var(--success);
+    }
+
+    .negative {
+      color: var(--danger);
+    }
+
+    .neutral {
+      color: #334155;
+    }
+
+    .stock-list {
+      margin-top: 22px;
+    }
+
+    .empty {
+      padding: 28px;
+      text-align: center;
+      color: var(--muted);
+      border: 1px dashed #cbd5e1;
+      border-radius: 18px;
+      background: #f8fafc;
+    }
+
+    .stock-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 14px;
+      padding: 18px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: #fbfdff;
+      margin-bottom: 12px;
+    }
+
+    .stock-name {
+      margin: 0 0 8px;
+      font-size: 18px;
+      font-weight: 900;
+      color: #111827;
+    }
+
+    .stock-meta {
+      display: flex;
+      gap: 10px 16px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 13px;
       line-height: 1.5;
     }
 
-    .container { width: min(1180px, calc(100% - 32px)); margin: 0 auto; }
-
-    .nav {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 22px 0;
-    }
-
-    .brand { display: flex; align-items: center; gap: 10px; font-weight: 900; letter-spacing: -0.03em; }
-
-    .logo {
-      width: 38px;
-      height: 38px;
-      display: grid;
-      place-items: center;
-      border-radius: 14px;
-      background: linear-gradient(135deg, var(--primary), var(--accent));
-      color: white;
-      box-shadow: 0 10px 24px rgba(37,99,235,.28);
-    }
-
-    button, input, select { font-family: inherit; }
-
-    .theme-btn, .tab-btn {
-      border: 1px solid var(--border);
-      background: var(--card);
-      color: var(--text);
-      border-radius: 999px;
-      font-weight: 850;
-      cursor: pointer;
-      transition: transform .12s ease, opacity .12s ease, background .12s ease;
-    }
-
-    button:active { transform: translateY(1px); }
-    .theme-btn { min-height: 42px; padding: 0 14px; backdrop-filter: blur(12px); }
-
-    .hero { padding: 34px 0 24px; text-align: center; }
-
-    .pill {
-      display: inline-flex;
-      margin-bottom: 18px;
-      padding: 9px 14px;
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      background: var(--card);
-      color: var(--muted);
-      font-size: 13px;
-      font-weight: 850;
-      backdrop-filter: blur(12px);
-    }
-
-    .hero h1 {
-      margin: 0 auto 14px;
-      max-width: 880px;
-      font-size: clamp(36px, 7vw, 72px);
-      line-height: 1.02;
-      letter-spacing: -0.07em;
-    }
-
-    .hero p { margin: 0 auto; max-width: 720px; color: var(--muted); font-size: 16px; }
-
-    .highlight {
-      background: linear-gradient(135deg, var(--primary), var(--accent));
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-    }
-
-    .tabs {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      margin: 22px 0 18px;
-      flex-wrap: wrap;
-    }
-
-    .tab-btn { padding: 12px 18px; font-size: 14px; }
-    .tab-btn.active { background: linear-gradient(135deg, var(--primary), var(--accent)); color: white; border-color: transparent; }
-
-    .layout { display: grid; grid-template-columns: 420px 1fr; gap: 22px; align-items: start; padding: 10px 0 34px; }
-
-    .card {
-      border: 1px solid var(--border);
-      border-radius: 28px;
-      background: var(--card);
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(18px);
-    }
-
-    .panel { padding: 24px; }
-
-    .panel-title { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 18px; }
-    .panel-title h2 { margin: 0; font-size: 20px; letter-spacing: -0.03em; }
-    .small-text { color: var(--muted); font-size: 13px; }
-
-    .form-group { margin-bottom: 15px; }
-    label { display: block; margin-bottom: 7px; font-size: 13px; font-weight: 850; }
-
-    input, select {
-      width: 100%;
-      min-height: 47px;
-      padding: 10px 13px;
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      background: var(--card-solid);
-      color: var(--text);
-      font-size: 15px;
-      outline: none;
-    }
-
-    input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(96,165,250,.16); }
-
-    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
-    .button-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
-
-    .primary-btn, .secondary-btn, .danger-btn {
-      border: 0;
-      min-height: 48px;
-      padding: 0 16px;
-      border-radius: 16px;
-      font-size: 15px;
+    .stock-profit {
+      margin-top: 10px;
       font-weight: 900;
-      cursor: pointer;
     }
 
-    .primary-btn { background: linear-gradient(135deg, var(--primary), var(--accent)); color: white; }
-    .secondary-btn { background: rgba(148,163,184,.16); color: var(--text); border: 1px solid var(--border); }
-    .danger-btn { background: rgba(239,68,68,.12); color: var(--red); border: 1px solid rgba(239,68,68,.28); }
-
-    .result-grid { display: grid; gap: 16px; }
-
-    .summary {
-      padding: 22px;
-      border-radius: 24px;
-      background: linear-gradient(135deg, rgba(37,99,235,.12), rgba(124,58,237,.10));
-      border: 1px solid var(--border);
+    .memo {
+      margin-top: 10px;
+      color: #4b5563;
+      font-size: 14px;
+      word-break: break-word;
     }
-    .summary strong { display: block; margin-bottom: 8px; font-size: 22px; letter-spacing: -0.04em; }
-    .summary p { margin: 0; color: var(--muted); font-size: 14px; }
 
-    .metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-    .tax-metric-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
-
-    .metric-card {
-      padding: 18px;
-      border: 1px solid var(--border);
+    .notice {
+      margin-top: 22px;
+      background: #fffbeb;
+      color: #78350f;
+      border: 1px solid #fde68a;
       border-radius: 22px;
-      background: var(--card-solid);
+      padding: 20px;
+      line-height: 1.65;
+      font-size: 14px;
     }
-    .metric-card .name { color: var(--muted); font-size: 13px; font-weight: 900; }
-    .metric-card .value { margin-top: 6px; font-size: 28px; line-height: 1.08; font-weight: 950; letter-spacing: -0.06em; word-break: keep-all; }
-    .metric-card .sub { margin-top: 8px; color: var(--muted); font-size: 13px; }
 
-    .profit { color: var(--red); }
-    .loss { color: var(--blue); }
-    .neutral { color: var(--muted); }
-
-    .bar-wrap { height: 14px; display: flex; overflow: hidden; border-radius: 999px; background: rgba(148,163,184,.15); border: 1px solid var(--border); }
-    .bar-spym { background: #3b82f6; }
-    .bar-qqqm { background: #8b5cf6; }
-    .bar-qld { background: #f97316; }
-
-    .alert { padding: 16px 18px; border-radius: 20px; font-size: 14px; font-weight: 800; border: 1px solid var(--border); }
-    .alert.safe { background: var(--green-bg); color: var(--green-text); }
-    .alert.warning { background: var(--orange-bg); color: var(--orange-text); }
-
-    .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 22px; background: var(--card-solid); }
-    table { width: 100%; min-width: 680px; border-collapse: collapse; }
-    th, td { padding: 14px 15px; border-bottom: 1px solid var(--border); text-align: right; font-size: 14px; }
-    th:first-child, td:first-child { text-align: left; }
-    th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .02em; }
-    tr:last-child td { border-bottom: 0; }
-
-    .trade-list { display: grid; gap: 12px; }
-    .trade-card { padding: 16px; border: 1px solid var(--border); border-radius: 20px; background: var(--card-solid); }
-    .trade-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
-    .trade-title { font-weight: 950; font-size: 16px; }
-    .trade-date { color: var(--muted); font-size: 12px; margin-top: 2px; }
-    .trade-actions { display: flex; gap: 8px; }
-    .mini-btn { border: 1px solid var(--border); background: rgba(148,163,184,.12); color: var(--text); border-radius: 999px; padding: 7px 10px; font-weight: 850; cursor: pointer; font-size: 12px; }
-    .mini-btn.delete { color: var(--red); border-color: rgba(239,68,68,.25); background: rgba(239,68,68,.10); }
-    .trade-details { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; color: var(--muted); font-size: 12px; }
-    .trade-details span { padding: 8px 10px; border-radius: 12px; background: rgba(148,163,184,.12); }
-
-    .hidden { display: none !important; }
-
-    .notice-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 22px; }
-    .notice-item { padding: 16px; border: 1px solid var(--border); border-radius: 20px; background: var(--card); }
-    .notice-item strong { display: block; margin-bottom: 6px; font-size: 14px; }
-    .notice-item span { color: var(--muted); font-size: 13px; }
-
-    footer { padding: 24px 0 38px; color: var(--muted); font-size: 12px; text-align: center; }
-
-    @media (max-width: 1080px) {
-      .layout { grid-template-columns: 1fr; }
-      .tax-metric-grid { grid-template-columns: repeat(2, 1fr); }
+    .notice p {
+      margin: 0;
     }
-    @media (max-width: 680px) {
-      .nav { padding: 16px 0; }
-      .hero { padding-top: 24px; }
-      .row-2, .row-3, .button-row, .metric-grid, .tax-metric-grid, .notice-list, .trade-details { grid-template-columns: 1fr; }
-      .panel { padding: 18px; }
-      .hero h1 { letter-spacing: -0.055em; }
-      .metric-card .value { font-size: 26px; }
+
+    .notice p + p {
+      margin-top: 8px;
+    }
+
+    @media (max-width: 860px) {
+      .container {
+        width: min(100% - 24px, 720px);
+        padding: 32px 0;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .summary-card {
+        position: static;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .card {
+        padding: 18px;
+        border-radius: 20px;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .stock-item {
+        grid-template-columns: 1fr;
+      }
+
+      .stock-item .btn-danger {
+        width: 100%;
+      }
+
+      .result-row {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 5px;
+      }
+
+      .result-row .value {
+        text-align: left;
+      }
     }
   </style>
 </head>
+
 <body>
-  <div class="container">
-    <nav class="nav">
-      <div class="brand"><span class="logo">₩</span><span>ETF Ratio & Tax Lab</span></div>
-      <div><button class="theme-btn" type="button" onclick="toggleTheme()" id="themeButton">🌙 Dark</button></div>
-    </nav>
+  <main class="container">
+    <header>
+      <h1>해외주식 양도소득세</h1>
+      <p>연간 실현손익 기준으로 예상 양도소득세를 간단히 계산해보세요.</p>
+    </header>
 
-    <section class="hero">
-      <div class="pill">SPYM · QQQM · QLD · 해외주식 양도소득세</div>
-      <h1>ETF 비율과 세금을 한 번에 보는 <span class="highlight">투자 계산 도구</span></h1>
-      <p>포트폴리오 비율 추천과 해외주식 양도소득세 예상액을 브라우저에서 바로 계산합니다. 입력 데이터는 서버로 전송되지 않고 이 브라우저의 LocalStorage에만 저장됩니다.</p>
-    </section>
+    <section class="grid">
+      <div>
+        <section class="card">
+          <h2>종목 입력</h2>
 
-    <div class="tabs">
-      <button class="tab-btn active" id="etfTab" onclick="showTab('etf')">ETF 비율 계산</button>
-      <button class="tab-btn" id="taxTab" onclick="showTab('tax')">양도소득세 계산</button>
-    </div>
+          <form id="stockForm">
+            <div class="form-grid">
+              <div class="field full">
+                <label for="name">종목명</label>
+                <input id="name" type="text" placeholder="예: AAPL, TSLA" autocomplete="off" required />
+              </div>
 
-    <section id="etfSection">
-      <div class="layout">
-        <aside class="card panel">
-          <div class="panel-title"><h2>ETF 입력값</h2><span class="small-text">기본값: 3년</span></div>
-          <div class="form-group"><label for="totalInvestment">총 투자금</label><input id="totalInvestment" type="text" inputmode="numeric" value="10,000,000" oninput="handleMoneyInput(this); calculateEtf();" /></div>
-          <div class="form-group"><label for="monthlyInvestment">월 추가 투자금</label><input id="monthlyInvestment" type="text" inputmode="numeric" value="500,000" oninput="handleMoneyInput(this); calculateEtf();" /></div>
-          <div class="row-2">
-            <div class="form-group"><label for="period">투자 기간</label><select id="period" onchange="calculateEtf()"><option value="1">1년</option><option value="2">2년</option><option value="3" selected>3년</option><option value="5">5년</option><option value="10">10년 이상</option></select></div>
-            <div class="form-group"><label for="riskType">투자 성향</label><select id="riskType" onchange="calculateEtf()"><option value="stable">안정형</option><option value="balanced" selected>중립형</option><option value="aggressive">공격형</option></select></div>
-          </div>
-          <div class="row-2">
-            <div class="form-group"><label for="maxLoss">감내 손실률</label><select id="maxLoss" onchange="calculateEtf()"><option value="10">-10%</option><option value="20" selected>-20%</option><option value="30">-30%</option><option value="40">-40%</option></select></div>
-            <div class="form-group"><label for="qldMax">QLD 최대 비중</label><select id="qldMax" onchange="calculateEtf()"><option value="0">0%</option><option value="5">5%</option><option value="10">10%</option><option value="15">15%</option><option value="20" selected>20%</option><option value="25">25%</option><option value="30">30%</option></select></div>
-          </div>
-          <div class="form-group"><label for="rebalance">리밸런싱 주기</label><select id="rebalance" onchange="calculateEtf()"><option value="none">없음</option><option value="quarter">분기</option><option value="half" selected>반기</option><option value="year">연 1회</option></select></div>
-          <div class="button-row"><button class="primary-btn" type="button" onclick="calculateEtf()">다시 계산</button><button class="secondary-btn" type="button" onclick="resetEtf()">초기화</button></div>
-        </aside>
+              <div class="field">
+                <label for="buyAmount">매수금액</label>
+                <input id="buyAmount" type="number" min="0" step="1" placeholder="예: 5000000" required />
+              </div>
 
-        <main class="card panel">
-          <div class="panel-title"><h2>ETF 계산 결과</h2><span class="small-text">참고용 배분</span></div>
-          <div class="result-grid">
-            <div class="summary"><strong id="etfRiskGrade">위험도: 중간</strong><p id="etfDescription">입력값을 기준으로 포트폴리오 비율을 계산합니다.</p></div>
-            <div class="metric-grid">
-              <div class="metric-card"><div class="name">SPYM</div><div class="value" id="spymRatio">0%</div><div class="sub" id="spymMoney">0원</div></div>
-              <div class="metric-card"><div class="name">QQQM</div><div class="value" id="qqqmRatio">0%</div><div class="sub" id="qqqmMoney">0원</div></div>
-              <div class="metric-card"><div class="name">QLD</div><div class="value" id="qldRatio">0%</div><div class="sub" id="qldMoney">0원</div></div>
+              <div class="field">
+                <label for="sellAmount">매도금액</label>
+                <input id="sellAmount" type="number" min="0" step="1" placeholder="예: 7500000" required />
+              </div>
+
+              <div class="field full">
+                <label for="fee">거래수수료</label>
+                <input id="fee" type="number" min="0" step="1" placeholder="예: 15000" value="0" required />
+              </div>
+
+              <div class="field full">
+                <label for="memo">메모</label>
+                <textarea id="memo" placeholder="선택 입력"></textarea>
+              </div>
             </div>
-            <div class="bar-wrap"><div class="bar-spym" id="barSpym"></div><div class="bar-qqqm" id="barQqqm"></div><div class="bar-qld" id="barQld"></div></div>
-            <div id="etfWarning" class="alert safe">QLD 비중이 설정한 기준 안에 있습니다.</div>
-            <div class="table-wrap"><table><thead><tr><th>ETF</th><th>권장 비율</th><th>초기 투자금</th><th>월 추가 투자금</th></tr></thead><tbody><tr><td>SPYM</td><td id="spymTableRatio">0%</td><td id="spymTableMoney">0원</td><td id="spymMonthly">0원</td></tr><tr><td>QQQM</td><td id="qqqmTableRatio">0%</td><td id="qqqmTableMoney">0원</td><td id="qqqmMonthly">0원</td></tr><tr><td>QLD</td><td id="qldTableRatio">0%</td><td id="qldTableMoney">0원</td><td id="qldMonthly">0원</td></tr></tbody></table></div>
-          </div>
-        </main>
+
+            <div class="actions">
+              <button type="submit" class="btn-primary">종목 추가</button>
+              <button type="button" id="resetButton" class="btn-ghost">전체 초기화</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="card stock-list">
+          <h2>입력한 종목 목록</h2>
+          <div id="stockList"></div>
+        </section>
       </div>
+
+      <aside class="card summary-card">
+        <h2>계산 결과</h2>
+
+        <div class="tax-highlight">
+          <span>예상 양도소득세</span>
+          <strong id="mainTax">0원</strong>
+        </div>
+
+        <div id="resultList" class="result-list"></div>
+      </aside>
     </section>
 
-    <section id="taxSection" class="hidden">
-      <div class="layout">
-        <aside class="card panel">
-          <div class="panel-title"><h2>거래 입력</h2><span class="small-text" id="editModeText">새 거래</span></div>
-          <div class="form-group"><label for="symbol">종목명</label><input id="symbol" type="text" placeholder="예: AAPL" /></div>
-          <div class="row-2">
-            <div class="form-group"><label for="buyDate">매수일</label><input id="buyDate" type="date" /></div>
-            <div class="form-group"><label for="sellDate">매도일</label><input id="sellDate" type="date" /></div>
-          </div>
-          <div class="row-2">
-            <div class="form-group"><label for="buyAmount">매수 금액</label><input id="buyAmount" type="text" inputmode="decimal" placeholder="매수가" oninput="handleMoneyInput(this)" /></div>
-            <div class="form-group"><label for="sellAmount">매도 금액</label><input id="sellAmount" type="text" inputmode="decimal" placeholder="매도가" oninput="handleMoneyInput(this)" /></div>
-          </div>
-          <div class="row-3">
-            <div class="form-group"><label for="quantity">수량</label><input id="quantity" type="number" min="0" step="0.0001" placeholder="수량" /></div>
-            <div class="form-group"><label for="exchangeRate">환율</label><input id="exchangeRate" type="text" inputmode="decimal" value="1,350" oninput="handleMoneyInput(this)" /></div>
-            <div class="form-group"><label for="fee">수수료</label><input id="fee" type="text" inputmode="numeric" value="0" oninput="handleMoneyInput(this)" /></div>
-          </div>
-          <div class="button-row"><button class="primary-btn" type="button" onclick="saveTrade()" id="saveTradeButton">거래 추가</button><button class="secondary-btn" type="button" onclick="clearTradeForm()">입력 초기화</button></div>
-          <div class="button-row"><button class="danger-btn" type="button" onclick="clearAllTrades()">전체 삭제</button><button class="secondary-btn" type="button" onclick="alert('CSV 업로드 기능은 추후 확장용 구조입니다.')">CSV 준비</button></div>
-        </aside>
-
-        <main class="card panel">
-          <div class="panel-title"><h2>세금 계산 결과</h2><span class="small-text">기본공제 250만 원</span></div>
-          <div class="result-grid">
-            <div class="tax-metric-grid">
-              <div class="metric-card"><div class="name">총 손익</div><div class="value" id="totalProfit">0원</div><div class="sub">손익통산 후</div></div>
-              <div class="metric-card"><div class="name">기본공제</div><div class="value neutral" id="deduction">2,500,000원</div><div class="sub">연간 공제</div></div>
-              <div class="metric-card"><div class="name">과세표준</div><div class="value" id="taxBase">0원</div><div class="sub">공제 후 금액</div></div>
-              <div class="metric-card"><div class="name">예상 세금</div><div class="value" id="expectedTax">0원</div><div class="sub">22% 적용</div></div>
-              <div class="metric-card"><div class="name">실수령 예상액</div><div class="value" id="netProfit">0원</div><div class="sub">총손익 - 세금</div></div>
-            </div>
-            <div id="taxNotice" class="alert safe">거래 내역을 입력하면 예상 양도소득세가 자동 계산됩니다.</div>
-            <div>
-              <div class="panel-title"><h2>거래 내역</h2><span class="small-text" id="tradeCount">0건</span></div>
-              <div class="trade-list" id="tradeList"></div>
-            </div>
-          </div>
-        </main>
-      </div>
+    <section class="notice">
+      <p>
+        본 사이트는 참고용입니다. 실제 세금 신고 시에는 증권사 거래내역,
+        환율 적용 기준, 수수료, 기타 필요경비, 국세청 신고 기준에 따라 금액이
+        달라질 수 있습니다.
+      </p>
+      <p>
+        해외주식 양도소득세는 일반적으로 해당 연도에 실현한 손익을 합산하여
+        다음 해 5월에 신고·납부합니다.
+      </p>
     </section>
-
-    <section class="notice-list">
-      <div class="notice-item"><strong>ETF 비율 추천</strong><span>SPYM을 코어로 두고 QQQM과 QLD 비중을 투자 성향에 따라 조절합니다.</span></div>
-      <div class="notice-item"><strong>양도소득세 계산</strong><span>총손익, 기본공제, 과세표준, 예상 세금을 간단히 계산합니다.</span></div>
-      <div class="notice-item"><strong>브라우저 저장</strong><span>입력 데이터는 LocalStorage에 저장되며 서버로 전송되지 않습니다.</span></div>
-    </section>
-
-    <footer>본 계산기는 투자 판단 및 세무 신고를 위한 참고용 도구입니다. 실제 세금 신고 및 투자 결정은 전문가 상담 또는 공식 자료 확인 후 진행해야 합니다.</footer>
-  </div>
+  </main>
 
   <script>
-    const TAX_RATE = 0.22;
+    /*
+      계산 검증 예시
+
+      1. 총 실현손익 2,000,000원
+         과세표준 0원
+         예상 세금 0원
+
+      2. 총 실현손익 3,000,000원
+         과세표준 500,000원
+         예상 세금 110,000원
+
+      3. 총 실현손익 -1,000,000원
+         과세표준 0원
+         예상 세금 0원
+    */
+
+    const STORAGE_KEY = "foreignStockTaxCalculatorItems";
+
     const BASIC_DEDUCTION = 2500000;
-    let trades = [];
-    let editingId = null;
+    const CAPITAL_GAINS_TAX_RATE = 0.2;
+    const LOCAL_INCOME_TAX_RATE = 0.02;
+    const TOTAL_TAX_RATE = CAPITAL_GAINS_TAX_RATE + LOCAL_INCOME_TAX_RATE;
 
-    function onlyNumber(value) { return String(value || '').replace(/,/g, '').replace(/[^0-9.]/g, ''); }
-    function toNumber(value) { const parsed = Number(onlyNumber(value)); return Number.isFinite(parsed) ? parsed : 0; }
-    function formatWon(value) { const rounded = Math.round(value); const sign = rounded < 0 ? '-' : ''; return sign + Math.abs(rounded).toLocaleString('ko-KR') + '원'; }
-    function formatSignedWon(value) { if (value > 0) return '+' + formatWon(value); if (value < 0) return formatWon(value); return '0원'; }
-    function setText(id, value) { document.getElementById(id).textContent = value; }
-    function setProfitClass(element, value) { element.classList.remove('profit', 'loss', 'neutral'); if (value > 0) element.classList.add('profit'); else if (value < 0) element.classList.add('loss'); else element.classList.add('neutral'); }
+    const form = document.getElementById("stockForm");
+    const stockList = document.getElementById("stockList");
+    const resultList = document.getElementById("resultList");
+    const mainTax = document.getElementById("mainTax");
+    const resetButton = document.getElementById("resetButton");
 
-    function handleMoneyInput(input) {
-      const raw = onlyNumber(input.value);
-      if (raw === '') { input.value = ''; return; }
-      const parts = raw.split('.');
-      const integer = parts[0] ? Number(parts[0]).toLocaleString('ko-KR') : '0';
-      input.value = parts.length > 1 ? integer + '.' + parts.slice(1).join('') : integer;
-    }
+    let stocks = loadStocks();
 
-    function showTab(tab) {
-      document.getElementById('etfSection').classList.toggle('hidden', tab !== 'etf');
-      document.getElementById('taxSection').classList.toggle('hidden', tab !== 'tax');
-      document.getElementById('etfTab').classList.toggle('active', tab === 'etf');
-      document.getElementById('taxTab').classList.toggle('active', tab === 'tax');
-      localStorage.setItem('activeTab', tab);
-    }
-
-    function toggleTheme() {
-      const html = document.documentElement;
-      const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-      html.setAttribute('data-theme', next);
-      localStorage.setItem('theme', next);
-      document.getElementById('themeButton').textContent = next === 'dark' ? '☀️ Light' : '🌙 Dark';
-    }
-
-    function loadTheme() {
-      const saved = localStorage.getItem('theme') || 'light';
-      document.documentElement.setAttribute('data-theme', saved);
-      document.getElementById('themeButton').textContent = saved === 'dark' ? '☀️ Light' : '🌙 Dark';
-    }
-
-    function calculateEtf() {
-      const totalInvestment = toNumber(document.getElementById('totalInvestment').value);
-      const monthlyInvestment = toNumber(document.getElementById('monthlyInvestment').value);
-      const period = Number(document.getElementById('period').value);
-      const riskType = document.getElementById('riskType').value;
-      const maxLoss = Number(document.getElementById('maxLoss').value);
-      const qldMax = Number(document.getElementById('qldMax').value);
-      const rebalance = document.getElementById('rebalance').value;
-
-      let baseSpym = 50, baseQld = 15, typeName = '중립형';
-      if (riskType === 'stable') { baseSpym = 65; baseQld = 5; typeName = '안정형'; }
-      if (riskType === 'aggressive') { baseSpym = 40; baseQld = 25; typeName = '공격형'; }
-
-      let qld = Math.min(baseQld, qldMax);
-      if (maxLoss <= 10) qld = Math.min(qld, 5);
-      if (maxLoss === 20) qld = Math.min(qld, 15);
-      if (period <= 2) qld = Math.min(qld, 10);
-
-      let spym = Math.max(baseSpym, 40);
-      let qqqm = 100 - spym - qld;
-      if (qqqm < 20) { qqqm = 20; spym = 100 - qqqm - qld; }
-
-      const spymMoney = totalInvestment * spym / 100;
-      const qqqmMoney = totalInvestment * qqqm / 100;
-      const qldMoney = totalInvestment * qld / 100;
-      const spymMonthly = monthlyInvestment * spym / 100;
-      const qqqmMonthly = monthlyInvestment * qqqm / 100;
-      const qldMonthly = monthlyInvestment * qld / 100;
-
-      let riskGrade = '위험도: 중간';
-      if (qld <= 5 && spym >= 60) riskGrade = '위험도: 낮음';
-      else if (qld <= 15) riskGrade = '위험도: 중간';
-      else if (qld <= 25) riskGrade = '위험도: 높음';
-      else riskGrade = '위험도: 매우 높음';
-
-      const rebalanceText = { none: '리밸런싱 없음', quarter: '분기 리밸런싱', half: '반기 리밸런싱', year: '연 1회 리밸런싱' }[rebalance];
-      let description = `${typeName} 기준으로 SPYM을 코어 자산으로 두고, QQQM으로 성장주 노출을 유지하며, QLD는 위성 자산으로 제한한 구성입니다. 현재 기준은 ${rebalanceText}입니다.`;
-      if (qld === 0) description = `${typeName} 기준으로 레버리지 ETF를 제외하고 SPYM과 QQQM 중심으로 구성했습니다.`;
-      if (qld >= 20) description = `${typeName} 기준의 공격적인 구성입니다. QLD 비중이 높아 하락장과 횡보장에서 변동성이 커질 수 있습니다.`;
-
-      setText('etfRiskGrade', riskGrade);
-      setText('etfDescription', description);
-      setText('spymRatio', spym + '%'); setText('qqqmRatio', qqqm + '%'); setText('qldRatio', qld + '%');
-      setText('spymMoney', formatWon(spymMoney)); setText('qqqmMoney', formatWon(qqqmMoney)); setText('qldMoney', formatWon(qldMoney));
-      setText('spymTableRatio', spym + '%'); setText('qqqmTableRatio', qqqm + '%'); setText('qldTableRatio', qld + '%');
-      setText('spymTableMoney', formatWon(spymMoney)); setText('qqqmTableMoney', formatWon(qqqmMoney)); setText('qldTableMoney', formatWon(qldMoney));
-      setText('spymMonthly', formatWon(spymMonthly)); setText('qqqmMonthly', formatWon(qqqmMonthly)); setText('qldMonthly', formatWon(qldMonthly));
-      document.getElementById('barSpym').style.width = spym + '%';
-      document.getElementById('barQqqm').style.width = qqqm + '%';
-      document.getElementById('barQld').style.width = qld + '%';
-
-      const warning = document.getElementById('etfWarning');
-      warning.className = 'alert safe';
-      warning.textContent = 'QLD 비중이 설정한 기준 안에 있습니다.';
-      if (qld >= 20) { warning.className = 'alert warning'; warning.textContent = '주의: QLD 비중이 20% 이상입니다. 3년 투자라도 하락장과 횡보장에서 손실 변동성이 커질 수 있습니다.'; }
-      if (qldMax >= 30 && riskType === 'aggressive') { warning.className = 'alert warning'; warning.textContent = '주의: 공격형 설정과 높은 QLD 허용 비중이 함께 선택되었습니다. QQQM 전량 대체보다 일부 편입 관점으로 보는 것이 안전합니다.'; }
-
-      saveEtfInputs();
-    }
-
-    function saveEtfInputs() {
-      const data = {
-        totalInvestment: document.getElementById('totalInvestment').value,
-        monthlyInvestment: document.getElementById('monthlyInvestment').value,
-        period: document.getElementById('period').value,
-        riskType: document.getElementById('riskType').value,
-        maxLoss: document.getElementById('maxLoss').value,
-        qldMax: document.getElementById('qldMax').value,
-        rebalance: document.getElementById('rebalance').value
-      };
-      localStorage.setItem('etfInputs', JSON.stringify(data));
-    }
-
-    function loadEtfInputs() {
-      const saved = localStorage.getItem('etfInputs');
-      if (!saved) return;
+    function loadStocks() {
       try {
-        const data = JSON.parse(saved);
-        Object.keys(data).forEach(function(key) {
-          const el = document.getElementById(key);
-          if (el) el.value = data[key];
-        });
-      } catch (_) {}
+        const saved = localStorage.getItem(STORAGE_KEY);
+        return saved ? JSON.parse(saved) : [];
+      } catch (error) {
+        console.error("저장된 데이터를 불러오지 못했습니다.", error);
+        return [];
+      }
     }
 
-    function resetEtf() {
-      document.getElementById('totalInvestment').value = '10,000,000';
-      document.getElementById('monthlyInvestment').value = '500,000';
-      document.getElementById('period').value = '3';
-      document.getElementById('riskType').value = 'balanced';
-      document.getElementById('maxLoss').value = '20';
-      document.getElementById('qldMax').value = '20';
-      document.getElementById('rebalance').value = 'half';
-      calculateEtf();
+    function saveStocks() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(stocks));
     }
 
-    function getTradeProfit(trade) {
-      return (trade.sellAmount * trade.exchangeRate * trade.quantity) - (trade.buyAmount * trade.exchangeRate * trade.quantity) - trade.fee;
-    }
+    function toNumber(value) {
+      const number = Number(value);
 
-    function saveTrade() {
-      const symbol = document.getElementById('symbol').value.trim();
-      const buyDate = document.getElementById('buyDate').value;
-      const sellDate = document.getElementById('sellDate').value;
-      const buyAmount = toNumber(document.getElementById('buyAmount').value);
-      const sellAmount = toNumber(document.getElementById('sellAmount').value);
-      const quantity = Number(document.getElementById('quantity').value) || 0;
-      const exchangeRate = toNumber(document.getElementById('exchangeRate').value);
-      const fee = toNumber(document.getElementById('fee').value);
-
-      if (!symbol || !buyAmount || !sellAmount || !quantity || !exchangeRate) {
-        alert('종목명, 매수금액, 매도금액, 수량, 환율은 필수 입력값입니다.');
-        return;
+      if (!Number.isFinite(number) || number < 0) {
+        return 0;
       }
 
-      const trade = { id: editingId || String(Date.now()), symbol, buyDate, sellDate, buyAmount, sellAmount, quantity, exchangeRate, fee };
-      if (editingId) trades = trades.map(function(item) { return item.id === editingId ? trade : item; });
-      else trades.unshift(trade);
-
-      editingId = null;
-      clearTradeForm();
-      saveTrades();
-      renderTrades();
-      calculateTax();
+      return Math.floor(number);
     }
 
-    function editTrade(id) {
-      const trade = trades.find(function(item) { return item.id === id; });
-      if (!trade) return;
-      editingId = id;
-      document.getElementById('symbol').value = trade.symbol;
-      document.getElementById('buyDate').value = trade.buyDate;
-      document.getElementById('sellDate').value = trade.sellDate;
-      document.getElementById('buyAmount').value = Number(trade.buyAmount).toLocaleString('ko-KR');
-      document.getElementById('sellAmount').value = Number(trade.sellAmount).toLocaleString('ko-KR');
-      document.getElementById('quantity').value = trade.quantity;
-      document.getElementById('exchangeRate').value = Number(trade.exchangeRate).toLocaleString('ko-KR');
-      document.getElementById('fee').value = Number(trade.fee).toLocaleString('ko-KR');
-      document.getElementById('saveTradeButton').textContent = '수정 저장';
-      document.getElementById('editModeText').textContent = '수정 중';
+    function formatWon(value) {
+      const rounded = Math.round(value);
+      return `${rounded.toLocaleString("ko-KR")}원`;
     }
 
-    function deleteTrade(id) {
-      trades = trades.filter(function(item) { return item.id !== id; });
-      if (editingId === id) clearTradeForm();
-      saveTrades();
-      renderTrades();
-      calculateTax();
+    function getValueClass(value) {
+      if (value > 0) return "positive";
+      if (value < 0) return "negative";
+      return "neutral";
     }
 
-    function clearTradeForm() {
-      editingId = null;
-      document.getElementById('symbol').value = '';
-      document.getElementById('buyDate').value = '';
-      document.getElementById('sellDate').value = '';
-      document.getElementById('buyAmount').value = '';
-      document.getElementById('sellAmount').value = '';
-      document.getElementById('quantity').value = '';
-      document.getElementById('exchangeRate').value = '1,350';
-      document.getElementById('fee').value = '0';
-      document.getElementById('saveTradeButton').textContent = '거래 추가';
-      document.getElementById('editModeText').textContent = '새 거래';
+    function calculateStockProfit(stock) {
+      return stock.sellAmount - stock.buyAmount - stock.fee;
     }
 
-    function clearAllTrades() {
-      if (!confirm('모든 거래 내역을 삭제할까요?')) return;
-      trades = [];
-      clearTradeForm();
-      saveTrades();
-      renderTrades();
-      calculateTax();
+    // 세금 계산 로직
+    function calculateTax(items) {
+      const totalBuyAmount = items.reduce((sum, item) => sum + item.buyAmount, 0);
+      const totalSellAmount = items.reduce((sum, item) => sum + item.sellAmount, 0);
+      const totalFee = items.reduce((sum, item) => sum + item.fee, 0);
+
+      const totalProfit = totalSellAmount - totalBuyAmount - totalFee;
+
+      const taxableIncome = Math.max(totalProfit - BASIC_DEDUCTION, 0);
+      const capitalGainsTax = taxableIncome * CAPITAL_GAINS_TAX_RATE;
+      const localIncomeTax = taxableIncome * LOCAL_INCOME_TAX_RATE;
+      const estimatedTax = taxableIncome * TOTAL_TAX_RATE;
+      const afterTaxProfit = totalProfit - estimatedTax;
+
+      return {
+        totalBuyAmount,
+        totalSellAmount,
+        totalFee,
+        totalProfit,
+        basicDeduction: BASIC_DEDUCTION,
+        taxableIncome,
+        estimatedTax,
+        capitalGainsTax,
+        localIncomeTax,
+        afterTaxProfit
+      };
     }
 
-    function saveTrades() { localStorage.setItem('taxTrades', JSON.stringify(trades)); }
-    function loadTrades() { const saved = localStorage.getItem('taxTrades'); if (!saved) return; try { const parsed = JSON.parse(saved); if (Array.isArray(parsed)) trades = parsed; } catch (_) { trades = []; } }
+    function renderResults() {
+      const result = calculateTax(stocks);
 
-    function renderTrades() {
-      const list = document.getElementById('tradeList');
-      setText('tradeCount', trades.length + '건');
-      if (trades.length === 0) {
-        list.innerHTML = '<div class="alert warning">아직 입력된 거래가 없습니다. 왼쪽에서 거래를 추가해 주세요.</div>';
-        return;
-      }
+      mainTax.textContent = formatWon(result.estimatedTax);
 
-      list.innerHTML = trades.map(function(trade) {
-        const profit = getTradeProfit(trade);
-        const profitClass = profit > 0 ? 'profit' : profit < 0 ? 'loss' : 'neutral';
+      const rows = [
+        ["총 매수금액", result.totalBuyAmount],
+        ["총 매도금액", result.totalSellAmount],
+        ["총 거래수수료", result.totalFee],
+        ["총 실현손익", result.totalProfit, true],
+        ["기본공제", result.basicDeduction],
+        ["과세표준", result.taxableIncome],
+        ["예상 양도소득세", result.estimatedTax],
+        ["양도소득세 20%", result.capitalGainsTax],
+        ["지방소득세 2%", result.localIncomeTax],
+        ["세후 손익", result.afterTaxProfit, true]
+      ];
+
+      resultList.innerHTML = rows.map(([label, value, colorize]) => {
+        const valueClass = colorize ? getValueClass(value) : "neutral";
+
         return `
-          <div class="trade-card">
-            <div class="trade-head">
-              <div>
-                <div class="trade-title">${escapeHtml(trade.symbol)} <span class="${profitClass}">${formatSignedWon(profit)}</span></div>
-                <div class="trade-date">${trade.buyDate || '-'} → ${trade.sellDate || '-'}</div>
-              </div>
-              <div class="trade-actions">
-                <button class="mini-btn" onclick="editTrade('${trade.id}')">수정</button>
-                <button class="mini-btn delete" onclick="deleteTrade('${trade.id}')">삭제</button>
-              </div>
-            </div>
-            <div class="trade-details">
-              <span>매수 ${formatWon(trade.buyAmount)}</span>
-              <span>매도 ${formatWon(trade.sellAmount)}</span>
-              <span>수량 ${trade.quantity}</span>
-              <span>환율 ${Number(trade.exchangeRate).toLocaleString('ko-KR')}</span>
-            </div>
+          <div class="result-row">
+            <span class="label">${label}</span>
+            <span class="value ${valueClass}">${formatWon(value)}</span>
           </div>
         `;
-      }).join('');
+      }).join("");
     }
 
-    function calculateTax() {
-      const totalProfit = trades.reduce(function(sum, trade) { return sum + getTradeProfit(trade); }, 0);
-      const taxBase = Math.max(totalProfit - BASIC_DEDUCTION, 0);
-      const expectedTax = taxBase * TAX_RATE;
-      const netProfit = totalProfit - expectedTax;
-
-      const totalEl = document.getElementById('totalProfit');
-      const baseEl = document.getElementById('taxBase');
-      const taxEl = document.getElementById('expectedTax');
-      const netEl = document.getElementById('netProfit');
-
-      totalEl.textContent = formatSignedWon(totalProfit);
-      baseEl.textContent = formatWon(taxBase);
-      taxEl.textContent = formatWon(expectedTax);
-      netEl.textContent = formatSignedWon(netProfit);
-      setText('deduction', formatWon(BASIC_DEDUCTION));
-
-      setProfitClass(totalEl, totalProfit);
-      setProfitClass(netEl, netProfit);
-      setProfitClass(baseEl, taxBase);
-      setProfitClass(taxEl, expectedTax);
-
-      const notice = document.getElementById('taxNotice');
-      if (totalProfit <= 0) {
-        notice.className = 'alert safe';
-        notice.textContent = '총손익이 0원 이하라 예상 과세표준과 세금은 0원입니다.';
-      } else if (taxBase === 0) {
-        notice.className = 'alert safe';
-        notice.textContent = '총손익이 기본공제 250만 원 이하라 예상 세금은 0원입니다.';
-      } else {
-        notice.className = 'alert warning';
-        notice.textContent = '기본공제 초과분에 대해 22%를 적용한 단순 예상 세금입니다.';
+    function renderStockList() {
+      if (stocks.length === 0) {
+        stockList.innerHTML = `
+          <div class="empty">
+            아직 입력한 종목이 없습니다.
+          </div>
+        `;
+        return;
       }
+
+      stockList.innerHTML = stocks.map((stock) => {
+        const profit = calculateStockProfit(stock);
+
+        const memoHtml = stock.memo
+          ? `<div class="memo">${escapeHtml(stock.memo)}</div>`
+          : "";
+
+        return `
+          <article class="stock-item">
+            <div>
+              <h3 class="stock-name">${escapeHtml(stock.name)}</h3>
+
+              <div class="stock-meta">
+                <span>매수 ${formatWon(stock.buyAmount)}</span>
+                <span>매도 ${formatWon(stock.sellAmount)}</span>
+                <span>수수료 ${formatWon(stock.fee)}</span>
+              </div>
+
+              <div class="stock-profit ${getValueClass(profit)}">
+                실현손익 ${formatWon(profit)}
+              </div>
+
+              ${memoHtml}
+            </div>
+
+            <button type="button" class="btn-danger" onclick="deleteStock('${stock.id}')">
+              삭제
+            </button>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function render() {
+      renderResults();
+      renderStockList();
     }
 
     function escapeHtml(text) {
-      return String(text).replace(/[&<>'"]/g, function(char) {
-        return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[char];
+      return String(text)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function clearForm() {
+      form.reset();
+      document.getElementById("fee").value = 0;
+      document.getElementById("name").focus();
+    }
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      const name = document.getElementById("name").value.trim();
+      const buyAmount = toNumber(document.getElementById("buyAmount").value);
+      const sellAmount = toNumber(document.getElementById("sellAmount").value);
+      const fee = toNumber(document.getElementById("fee").value);
+      const memo = document.getElementById("memo").value.trim();
+
+      if (!name) {
+        alert("종목명을 입력해주세요.");
+        return;
+      }
+
+      stocks.push({
+        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+        name,
+        buyAmount,
+        sellAmount,
+        fee,
+        memo
       });
-    }
 
-    function init() {
-      loadTheme();
-      loadEtfInputs();
-      loadTrades();
-      calculateEtf();
-      renderTrades();
-      calculateTax();
-      showTab(localStorage.getItem('activeTab') || 'etf');
-    }
+      saveStocks();
+      render();
+      clearForm();
+    });
 
-    init();
+    // 숫자 입력칸에 e, +, - 입력 방지
+    document.querySelectorAll('input[type="number"]').forEach((input) => {
+      input.addEventListener("keydown", (event) => {
+        if (["e", "E", "+", "-"].includes(event.key)) {
+          event.preventDefault();
+        }
+      });
+
+      input.addEventListener("input", () => {
+        if (Number(input.value) < 0) {
+          input.value = 0;
+        }
+      });
+    });
+
+    window.deleteStock = function deleteStock(id) {
+      stocks = stocks.filter((stock) => stock.id !== id);
+      saveStocks();
+      render();
+    };
+
+    resetButton.addEventListener("click", () => {
+      if (!stocks.length) {
+        clearForm();
+        return;
+      }
+
+      const confirmed = confirm("입력한 모든 종목을 초기화할까요?");
+
+      if (!confirmed) return;
+
+      stocks = [];
+      saveStocks();
+      clearForm();
+      render();
+    });
+
+    render();
   </script>
 </body>
-</html>'''
-
-path = Path("/mnt/data/index.html")
-path.write_text(html, encoding="utf-8")
-print(f"Created {path} ({path.stat().st_size:,} bytes)")
+</html>
