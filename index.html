@@ -3,9 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <title>ETF 비율 계산기</title>
+
   <style>
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     body {
       margin: 0;
@@ -43,7 +47,7 @@
     }
 
     .card {
-      background: #fff;
+      background: #ffffff;
       border: 1px solid #e5e7eb;
       border-radius: 18px;
       padding: 18px;
@@ -89,7 +93,7 @@
       border: 1px solid #d1d5db;
       border-radius: 12px;
       font-size: 15px;
-      background: #fff;
+      background: #ffffff;
       color: #111827;
       outline: none;
     }
@@ -153,7 +157,8 @@
       white-space: nowrap;
     }
 
-    th:first-child, td:first-child {
+    th:first-child,
+    td:first-child {
       text-align: left;
       font-weight: 900;
     }
@@ -239,7 +244,7 @@
       padding: 10px 12px;
       border-radius: 12px;
       background: #111827;
-      color: white;
+      color: #ffffff;
       font-weight: 900;
       cursor: pointer;
     }
@@ -285,22 +290,22 @@
       <h1>ETF 비율 계산기</h1>
       <p class="subtitle">
         QQQM, SPYM, QLD의 현재 비중을 확인하고 목표 비율에 맞춰 월 투자금을 배분합니다.
-        페이지를 열면 매월 1일 이후 첫 거래일 기준 가격을 자동으로 불러옵니다.
+        ETF 가격은 월 1회, 환율은 한국시간 09:00~15:00 사이에 5분마다 자동 갱신합니다.
       </p>
     </header>
 
     <section class="grid">
       <div class="card full">
-        <h2>0. 월 1회 자동 가격 갱신</h2>
+        <h2>0. 가격 / 환율 자동 갱신</h2>
 
         <div class="summary">
           <div class="summary-item">
-            <div class="summary-label">기준월</div>
+            <div class="summary-label">ETF 기준월</div>
             <div class="summary-value" id="data-month">-</div>
           </div>
 
           <div class="summary-item">
-            <div class="summary-label">기준 거래일</div>
+            <div class="summary-label">ETF 기준 거래일</div>
             <div class="summary-value" id="data-date">-</div>
           </div>
 
@@ -316,17 +321,20 @@
         </div>
 
         <div class="actions">
-          <button type="button" id="force-refresh">이번 달 기준 재갱신</button>
+          <button type="button" id="force-refresh">ETF 이번 달 기준 재갱신</button>
+          <button type="button" id="force-fx-refresh">환율 지금 재갱신</button>
           <button type="button" class="secondary" id="clear-cache">저장 데이터 삭제</button>
         </div>
 
         <div class="status" id="refresh-message">
-          페이지를 열면 이번 달 데이터가 있는지 확인합니다. 없으면 자동으로 받아옵니다.
+          페이지를 열면 ETF 월간 가격과 환율을 확인합니다.
         </div>
 
         <p class="note">
-          무료 가격 데이터는 브라우저 환경에 따라 실패할 수 있습니다.
-          실패하면 아래 현재가를 직접 입력해도 계산기는 그대로 작동합니다.
+          ETF 가격은 매월 1일 이후 첫 미국 거래일 종가 기준입니다.
+          1일이 미국 휴장일이면 다음 거래일 데이터를 사용합니다.
+          환율은 사이트를 켜둔 상태에서 한국시간 09:00~15:00 사이 5분마다 갱신합니다.
+          무료 데이터라 실패할 수 있으며, 실패하면 현재가를 직접 입력해도 계산은 정상 작동합니다.
         </p>
       </div>
 
@@ -334,8 +342,7 @@
         <h2>1. 현재 보유 현황</h2>
         <div id="holdings"></div>
         <p class="note">
-          현재가는 원화 기준입니다. 자동 갱신 시 달러 가격 × 원/달러 환율로 채워집니다.
-          자동 갱신이 실패해도 현재 기준 초기값이 먼저 들어가 있습니다.
+          현재가는 원화 기준입니다.
         </p>
       </div>
 
@@ -374,7 +381,7 @@
         <h2>3. 월 투자금</h2>
 
         <label for="monthly">월 추가 투자금</label>
-        <input id="monthly" type="number" min="0" step="1000" value="500000" />
+        <input id="monthly" class="money-input" type="text" inputmode="numeric" value="500,000" />
 
         <div class="actions">
           <button type="button" onclick="setMonthly(400000)">40만 원</button>
@@ -384,7 +391,6 @@
 
         <p class="note">
           투자금은 직접 수정할 수 있습니다.
-          예: 40만 원이면 400000, 50만 원이면 500000으로 입력하세요.
         </p>
       </div>
 
@@ -461,18 +467,14 @@
 
   <script>
     const tickers = ["QQQM", "SPYM", "QLD"];
-    const storageKey = "etfMonthlyPriceDataV2";
+
+    const etfStorageKey = "etfMonthlyPriceDataV4";
+    const fxStorageKey = "dailyFxDataV2";
 
     /*
       현재 기준 초기값.
       자동 갱신이 성공하면 자동 갱신값으로 덮어씌워집니다.
     */
-    const defaultKrwPrices = {
-      QQQM: 452235,
-      SPYM: 132867,
-      QLD: 144989
-    };
-
     const defaultUsdPrices = {
       QQQM: 300.68,
       SPYM: 88.34,
@@ -482,10 +484,8 @@
     const defaultFx = 1504.04;
 
     /*
-      무료 가격 데이터용 우회 주소입니다.
-      브라우저에서 야후파이낸스 API가 바로 막힐 수 있어서 프록시를 사용합니다.
-      이 방식은 무료라서 가끔 실패할 수 있습니다.
-      실패하면 현재가를 직접 입력하면 됩니다.
+      야후파이낸스 무료 데이터를 브라우저에서 가져오기 위한 우회 주소입니다.
+      무료 방식이라 가끔 실패할 수 있습니다.
     */
     const proxy = "https://api.allorigins.win/raw?url=";
 
@@ -493,27 +493,16 @@
     const refreshMessage = document.getElementById("refresh-message");
     const refreshState = document.getElementById("refresh-state");
 
-    function createHoldingInputs() {
-      holdingsEl.innerHTML = tickers.map(ticker => `
-        <div class="ticker-row">
-          <div class="ticker-name">${ticker}</div>
+    function formatNumber(value) {
+      if (!isFinite(value)) return "0";
+      return Math.round(value).toLocaleString("ko-KR");
+    }
 
-          <div>
-            <label for="price-${ticker}">현재가 / 원</label>
-            <input id="price-${ticker}" type="number" min="0" step="1" value="${defaultKrwPrices[ticker] || 0}" />
-          </div>
-
-          <div>
-            <label for="shares-${ticker}">보유 수량</label>
-            <input id="shares-${ticker}" type="number" min="0" step="0.000001" value="0" />
-          </div>
-
-          <div>
-            <label>평가금액</label>
-            <input id="value-${ticker}" type="text" value="0원" readonly />
-          </div>
-        </div>
-      `).join("");
+    function formatDecimal(value, digits = 2) {
+      if (!isFinite(value)) return "0";
+      return Number(value).toLocaleString("ko-KR", {
+        maximumFractionDigits: digits
+      });
     }
 
     function won(value) {
@@ -526,15 +515,56 @@
       return value.toFixed(2) + "%";
     }
 
+    function cleanNumber(value) {
+      if (value === null || value === undefined) return 0;
+
+      const cleaned = String(value)
+        .replace(/,/g, "")
+        .replace(/[^\d.-]/g, "");
+
+      const number = parseFloat(cleaned);
+      return isNaN(number) ? 0 : number;
+    }
+
     function num(id) {
       const el = document.getElementById(id);
-      const value = el ? parseFloat(el.value) : 0;
-      return isNaN(value) ? 0 : value;
+      if (!el) return 0;
+      return cleanNumber(el.value);
+    }
+
+    function moneyValue(id) {
+      return num(id);
+    }
+
+    function formatMoneyInputWhileTyping(input) {
+      const cursorPosition = input.selectionStart;
+      const beforeLength = input.value.length;
+
+      const raw = input.value
+        .replace(/,/g, "")
+        .replace(/[^\d]/g, "");
+
+      if (raw === "") {
+        input.value = "";
+        update();
+        return;
+      }
+
+      const formatted = Number(raw).toLocaleString("ko-KR");
+
+      input.value = formatted;
+
+      const afterLength = input.value.length;
+      const diff = afterLength - beforeLength;
+      const newPosition = Math.max(0, cursorPosition + diff);
+
+      input.setSelectionRange(newPosition, newPosition);
     }
 
     function getKoreaDate() {
       const now = new Date();
       const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+
       return new Date(utc + 9 * 60 * 60000);
     }
 
@@ -546,9 +576,18 @@
       return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
     }
 
+    function getCurrentMonthKey() {
+      return yyyyMm(getKoreaDate());
+    }
+
+    function getTodayKey() {
+      return yyyyMmDd(getKoreaDate());
+    }
+
     function getThisMonthStartUnix() {
       const nowKr = getKoreaDate();
       const d = new Date(Date.UTC(nowKr.getFullYear(), nowKr.getMonth(), 1, 0, 0, 0));
+
       return Math.floor(d.getTime() / 1000);
     }
 
@@ -556,15 +595,66 @@
       const nowKr = getKoreaDate();
 
       /*
-        매월 1일이 미국 휴장일이면 다음 거래일 데이터를 받아야 해서
+        매월 1일이 미국 휴장일이면 다음 거래일 데이터를 받아야 하므로
         다음 달 8일까지 넉넉하게 조회합니다.
       */
       const d = new Date(Date.UTC(nowKr.getFullYear(), nowKr.getMonth() + 1, 8, 0, 0, 0));
+
       return Math.floor(d.getTime() / 1000);
     }
 
-    function getCurrentMonthKey() {
-      return yyyyMm(getKoreaDate());
+    function getRecentStartUnix(daysAgo = 10) {
+      const now = getKoreaDate();
+      const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate() - daysAgo, 0, 0, 0));
+
+      return Math.floor(d.getTime() / 1000);
+    }
+
+    function getTomorrowUnix() {
+      const now = getKoreaDate();
+      const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0));
+
+      return Math.floor(d.getTime() / 1000);
+    }
+
+    function isKoreaFxRefreshTime() {
+      const now = getKoreaDate();
+
+      const hour = now.getHours();
+      const minute = now.getMinutes();
+
+      const currentMinutes = hour * 60 + minute;
+      const startMinutes = 9 * 60;
+      const endMinutes = 15 * 60;
+
+      return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
+    }
+
+    function createHoldingInputs() {
+      holdingsEl.innerHTML = tickers.map(ticker => {
+        const krw = defaultUsdPrices[ticker] * defaultFx;
+
+        return `
+          <div class="ticker-row">
+            <div class="ticker-name">${ticker}</div>
+
+            <div>
+              <label for="price-${ticker}">현재가 / 원</label>
+              <input id="price-${ticker}" class="money-input" type="text" inputmode="numeric" value="${formatNumber(krw)}" />
+            </div>
+
+            <div>
+              <label for="shares-${ticker}">보유 수량</label>
+              <input id="shares-${ticker}" type="text" inputmode="decimal" value="0" />
+            </div>
+
+            <div>
+              <label>평가금액</label>
+              <input id="value-${ticker}" type="text" value="0원" readonly />
+            </div>
+          </div>
+        `;
+      }).join("");
     }
 
     async function fetchYahooChart(symbol, period1, period2) {
@@ -572,7 +662,7 @@
       const response = await fetch(proxy + encodeURIComponent(url));
 
       if (!response.ok) {
-        throw new Error(`${symbol} 가격 데이터를 가져오지 못했습니다.`);
+        throw new Error(`${symbol} 데이터를 가져오지 못했습니다.`);
       }
 
       const json = await response.json();
@@ -585,94 +675,201 @@
       const closes = result.indicators.quote[0].close;
       const timestamps = result.timestamp;
 
-      /*
-        1일이 휴장일이면 close가 없거나 데이터가 없을 수 있으므로
-        조회 구간 안에서 가장 먼저 나오는 유효 종가를 사용합니다.
-      */
-      for (let i = 0; i < closes.length; i++) {
-        if (closes[i] && isFinite(closes[i])) {
-          return {
-            symbol,
-            close: closes[i],
-            date: yyyyMmDd(new Date(timestamps[i] * 1000))
-          };
-        }
+      return timestamps.map((timestamp, index) => ({
+        close: closes[index],
+        date: yyyyMmDd(new Date(timestamp * 1000))
+      })).filter(item => item.close && isFinite(item.close));
+    }
+
+    async function fetchFirstValidAfterMonthStart(symbol) {
+      const rows = await fetchYahooChart(
+        symbol,
+        getThisMonthStartUnix(),
+        getMonthEndUnix()
+      );
+
+      if (!rows.length) {
+        throw new Error(`${symbol}의 월초 유효 종가를 찾지 못했습니다.`);
       }
 
-      throw new Error(`${symbol}의 유효한 종가를 찾지 못했습니다.`);
+      return rows[0];
     }
 
-    function saveMonthlyData(payload) {
-      localStorage.setItem(storageKey, JSON.stringify(payload));
+    async function fetchLatestValid(symbol) {
+      const rows = await fetchYahooChart(
+        symbol,
+        getRecentStartUnix(10),
+        getTomorrowUnix()
+      );
+
+      if (!rows.length) {
+        throw new Error(`${symbol}의 최신 유효 데이터를 찾지 못했습니다.`);
+      }
+
+      return rows[rows.length - 1];
     }
 
-    function loadMonthlyData() {
+    function saveEtfData(payload) {
+      localStorage.setItem(etfStorageKey, JSON.stringify(payload));
+    }
+
+    function loadEtfData() {
       try {
-        const raw = localStorage.getItem(storageKey);
+        const raw = localStorage.getItem(etfStorageKey);
         return raw ? JSON.parse(raw) : null;
       } catch {
         return null;
       }
     }
 
-    function applyPriceData(payload) {
-      if (!payload) return;
+    function saveFxData(payload) {
+      localStorage.setItem(fxStorageKey, JSON.stringify(payload));
+    }
 
-      document.getElementById("data-month").textContent = payload.month || "-";
-      document.getElementById("data-date").textContent = payload.priceDate || "-";
-      document.getElementById("fx-display").textContent = payload.fx
-        ? payload.fx.toLocaleString("ko-KR", { maximumFractionDigits: 2 })
-        : "-";
+    function loadFxData() {
+      try {
+        const raw = localStorage.getItem(fxStorageKey);
+        return raw ? JSON.parse(raw) : null;
+      } catch {
+        return null;
+      }
+    }
 
+    function getCurrentUsdPrices() {
+      const cached = loadEtfData();
+
+      if (cached && cached.usdPrices) {
+        return cached.usdPrices;
+      }
+
+      return defaultUsdPrices;
+    }
+
+    function getCurrentFx() {
+      const cached = loadFxData();
+
+      if (cached && cached.fx) {
+        return cached.fx;
+      }
+
+      return defaultFx;
+    }
+
+    function applyUsdAndFxToKrwInputs(usdPrices, fx) {
       tickers.forEach(ticker => {
-        const krwPrice = payload.krwPrices && payload.krwPrices[ticker];
+        const price = usdPrices[ticker] * fx;
+        const input = document.getElementById(`price-${ticker}`);
 
-        if (krwPrice && isFinite(krwPrice)) {
-          document.getElementById(`price-${ticker}`).value = Math.round(krwPrice);
+        if (input && price && isFinite(price)) {
+          input.value = formatNumber(price);
         }
       });
 
       update();
     }
 
-    function applyDefaultPriceInfo() {
-      const month = getCurrentMonthKey();
+    function applyHeaderInfo() {
+      const etf = loadEtfData();
+      const fx = loadFxData();
 
-      document.getElementById("data-month").textContent = month;
-      document.getElementById("data-date").textContent = "현재 기준 초기값";
-      document.getElementById("fx-display").textContent = defaultFx.toLocaleString("ko-KR", {
-        maximumFractionDigits: 2
-      });
+      document.getElementById("data-month").textContent =
+        etf && etf.month ? etf.month : getCurrentMonthKey();
+
+      document.getElementById("data-date").textContent =
+        etf && etf.priceDate ? etf.priceDate : "현재 기준 초기값";
+
+      document.getElementById("fx-display").textContent =
+        fx && fx.fx
+          ? formatDecimal(fx.fx, 2)
+          : formatDecimal(defaultFx, 2);
+    }
+
+    function applyDefaultPriceInfo() {
+      applyHeaderInfo();
 
       refreshState.textContent = "초기값";
       refreshMessage.textContent =
-        `현재 기준 초기값이 먼저 들어가 있습니다. QQQM $${defaultUsdPrices.QQQM}, SPYM $${defaultUsdPrices.SPYM}, QLD $${defaultUsdPrices.QLD}, 환율 ${defaultFx.toLocaleString("ko-KR")}원 기준입니다.`;
+        `초기값이 먼저 들어가 있습니다. ETF 가격은 월 1회, 환율은 한국시간 09:00~15:00 사이 5분마다 갱신됩니다. 기본 환율은 ${formatDecimal(defaultFx, 2)}원입니다.`;
+
+      applyUsdAndFxToKrwInputs(getCurrentUsdPrices(), getCurrentFx());
     }
 
-    async function refreshMonthlyPrices(force = false) {
-      const month = getCurrentMonthKey();
-      const cached = loadMonthlyData();
+    async function refreshDailyFx(force = false) {
+      const today = getTodayKey();
+      const cached = loadFxData();
 
-      if (!force && cached && cached.month === month) {
-        applyPriceData(cached);
-        refreshState.textContent = "저장됨";
-        refreshMessage.textContent = `이번 달 데이터가 이미 저장되어 있어요. 기준 거래일: ${cached.priceDate}`;
+      if (!force && cached && cached.today === today) {
+        applyHeaderInfo();
+        return cached.fx;
+      }
+
+      try {
+        const fxData = await fetchLatestValid("KRW=X");
+
+        const payload = {
+          today,
+          fx: fxData.close,
+          fxDate: fxData.date,
+          updatedAt: new Date().toISOString()
+        };
+
+        saveFxData(payload);
+
+        const usdPrices = getCurrentUsdPrices();
+
+        applyUsdAndFxToKrwInputs(usdPrices, payload.fx);
+        applyHeaderInfo();
+
+        refreshMessage.textContent =
+          `환율 갱신 완료. 환율 기준일은 ${payload.fxDate}, USD/KRW는 ${formatDecimal(payload.fx, 2)}원입니다.`;
+
+        return payload.fx;
+      } catch (error) {
+        refreshMessage.textContent =
+          `환율 자동 갱신에 실패했습니다. 기존 환율 또는 초기값을 사용합니다. 오류: ${error.message}`;
+
+        return getCurrentFx();
+      }
+    }
+
+    async function refreshFxDuringExchangeHours() {
+      if (!isKoreaFxRefreshTime()) {
+        refreshMessage.textContent =
+          "현재는 환율 자동 갱신 시간이 아닙니다. 한국시간 09:00~15:00 사이에만 환율을 자동 갱신합니다.";
         return;
       }
 
-      refreshState.textContent = "갱신 중";
-      refreshMessage.textContent = "이번 달 1일 이후 첫 거래일 기준 가격과 환율을 가져오는 중입니다.";
+      refreshState.textContent = "환율 갱신 중";
+
+      await refreshDailyFx(true);
+
+      applyUsdAndFxToKrwInputs(getCurrentUsdPrices(), getCurrentFx());
+      applyHeaderInfo();
+      update();
+
+      refreshState.textContent = "완료";
+    }
+
+    async function refreshMonthlyEtfPrices(force = false) {
+      const month = getCurrentMonthKey();
+      const cached = loadEtfData();
+
+      if (!force && cached && cached.month === month) {
+        applyHeaderInfo();
+        return cached.usdPrices;
+      }
+
+      refreshState.textContent = "ETF 갱신 중";
+      refreshMessage.textContent =
+        "이번 달 1일 이후 첫 거래일 기준 ETF 가격을 가져오는 중입니다.";
+
       document.getElementById("force-refresh").disabled = true;
 
       try {
-        const period1 = getThisMonthStartUnix();
-        const period2 = getMonthEndUnix();
-
-        const [qqqm, spym, qld, fxData] = await Promise.all([
-          fetchYahooChart("QQQM", period1, period2),
-          fetchYahooChart("SPYM", period1, period2),
-          fetchYahooChart("QLD", period1, period2),
-          fetchYahooChart("KRW=X", period1, period2)
+        const [qqqm, spym, qld] = await Promise.all([
+          fetchFirstValidAfterMonthStart("QQQM"),
+          fetchFirstValidAfterMonthStart("SPYM"),
+          fetchFirstValidAfterMonthStart("QLD")
         ]);
 
         const usdPrices = {
@@ -681,42 +878,53 @@
           QLD: qld.close
         };
 
-        const fx = fxData.close;
-
-        const krwPrices = Object.fromEntries(
-          tickers.map(ticker => [ticker, usdPrices[ticker] * fx])
-        );
-
         const priceDate = [qqqm.date, spym.date, qld.date].sort()[0];
 
         const payload = {
           month,
           priceDate,
-          fxDate: fxData.date,
-          fx,
           usdPrices,
-          krwPrices,
           updatedAt: new Date().toISOString()
         };
 
-        saveMonthlyData(payload);
-        applyPriceData(payload);
+        saveEtfData(payload);
 
-        refreshState.textContent = "완료";
+        const fx = getCurrentFx();
+
+        applyUsdAndFxToKrwInputs(usdPrices, fx);
+        applyHeaderInfo();
+
+        refreshState.textContent = "ETF 완료";
         refreshMessage.textContent =
-          `자동 갱신 완료. 기준 거래일은 ${priceDate}이고, 환율 기준일은 ${fxData.date}입니다.`;
+          `ETF 월간 가격 갱신 완료. 기준 거래일은 ${priceDate}입니다.`;
+
+        return usdPrices;
       } catch (error) {
-        refreshState.textContent = "초기값 사용";
+        refreshState.textContent = "ETF 초기값 사용";
         refreshMessage.textContent =
-          `자동 갱신에 실패해서 현재 기준 초기값을 사용합니다. 아래 현재가를 직접 수정해도 됩니다. 오류: ${error.message}`;
+          `ETF 자동 갱신에 실패해서 기존 가격 또는 초기값을 사용합니다. 오류: ${error.message}`;
+
+        return getCurrentUsdPrices();
       } finally {
         document.getElementById("force-refresh").disabled = false;
       }
     }
 
+    async function autoRefresh() {
+      applyDefaultPriceInfo();
+
+      const usdPrices = await refreshMonthlyEtfPrices(false);
+      const fx = await refreshDailyFx(false);
+
+      applyUsdAndFxToKrwInputs(usdPrices, fx);
+      applyHeaderInfo();
+
+      refreshState.textContent = "완료";
+    }
+
     function getData() {
       const data = tickers.map(ticker => {
-        const price = num(`price-${ticker}`);
+        const price = moneyValue(`price-${ticker}`);
         const shares = num(`shares-${ticker}`);
         const value = price * shares;
         const target = num(`target-${ticker.toLowerCase()}`);
@@ -731,7 +939,7 @@
       });
 
       const total = data.reduce((sum, item) => sum + item.value, 0);
-      const monthly = num("monthly");
+      const monthly = moneyValue("monthly");
       const targetTotal = data.reduce((sum, item) => sum + item.target, 0);
 
       return {
@@ -864,11 +1072,13 @@
       document.getElementById("target-qqqm").value = qqqm;
       document.getElementById("target-spym").value = spym;
       document.getElementById("target-qld").value = qld;
+
       update();
     }
 
     function setMonthly(amount) {
-      document.getElementById("monthly").value = amount;
+      document.getElementById("monthly").value = formatNumber(amount);
+
       update();
     }
 
@@ -876,25 +1086,60 @@
     applyDefaultPriceInfo();
 
     document.addEventListener("input", event => {
-      if (event.target.matches("input")) {
-        update();
+      if (event.target.classList.contains("money-input")) {
+        formatMoneyInputWhileTyping(event.target);
       }
+
+      update();
     });
 
-    document.getElementById("force-refresh").addEventListener("click", () => {
-      refreshMonthlyPrices(true);
+    document.getElementById("force-refresh").addEventListener("click", async () => {
+      await refreshMonthlyEtfPrices(true);
+      await refreshDailyFx(true);
+
+      applyUsdAndFxToKrwInputs(getCurrentUsdPrices(), getCurrentFx());
+      applyHeaderInfo();
+
+      refreshState.textContent = "완료";
+
+      update();
+    });
+
+    document.getElementById("force-fx-refresh").addEventListener("click", async () => {
+      refreshState.textContent = "환율 갱신 중";
+
+      await refreshDailyFx(true);
+
+      applyUsdAndFxToKrwInputs(getCurrentUsdPrices(), getCurrentFx());
+      applyHeaderInfo();
+
+      refreshState.textContent = "완료";
+
+      update();
     });
 
     document.getElementById("clear-cache").addEventListener("click", () => {
-      localStorage.removeItem(storageKey);
+      localStorage.removeItem(etfStorageKey);
+      localStorage.removeItem(fxStorageKey);
+
       applyDefaultPriceInfo();
+
       refreshMessage.textContent =
-        "저장된 이번 달 가격 데이터를 삭제했습니다. 현재 기준 초기값으로 돌아왔습니다. 재갱신 버튼을 누르면 새로 받아옵니다.";
+        "저장된 ETF 가격과 환율 데이터를 삭제했습니다. 현재 기준 초기값으로 돌아왔습니다.";
+
       update();
     });
 
     update();
-    refreshMonthlyPrices(false);
+    autoRefresh();
+
+    /*
+      사이트를 켜둔 상태에서만 작동합니다.
+      한국시간 09:00~15:00 사이에 5분마다 환율을 갱신합니다.
+    */
+    setInterval(() => {
+      refreshFxDuringExchangeHours();
+    }, 5 * 60 * 1000);
   </script>
 </body>
 </html>
