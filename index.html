@@ -335,6 +335,7 @@
         <div id="holdings"></div>
         <p class="note">
           현재가는 원화 기준입니다. 자동 갱신 시 달러 가격 × 원/달러 환율로 채워집니다.
+          자동 갱신이 실패해도 현재 기준 초기값이 먼저 들어가 있습니다.
         </p>
       </div>
 
@@ -375,7 +376,14 @@
         <label for="monthly">월 추가 투자금</label>
         <input id="monthly" type="number" min="0" step="1000" value="500000" />
 
+        <div class="actions">
+          <button type="button" onclick="setMonthly(400000)">40만 원</button>
+          <button type="button" onclick="setMonthly(500000)">50만 원</button>
+          <button type="button" class="secondary" onclick="setMonthly(1000000)">100만 원</button>
+        </div>
+
         <p class="note">
+          투자금은 직접 수정할 수 있습니다.
           예: 40만 원이면 400000, 50만 원이면 500000으로 입력하세요.
         </p>
       </div>
@@ -453,7 +461,25 @@
 
   <script>
     const tickers = ["QQQM", "SPYM", "QLD"];
-    const storageKey = "etfMonthlyPriceDataV1";
+    const storageKey = "etfMonthlyPriceDataV2";
+
+    /*
+      현재 기준 초기값.
+      자동 갱신이 성공하면 자동 갱신값으로 덮어씌워집니다.
+    */
+    const defaultKrwPrices = {
+      QQQM: 452235,
+      SPYM: 132867,
+      QLD: 144989
+    };
+
+    const defaultUsdPrices = {
+      QQQM: 300.68,
+      SPYM: 88.34,
+      QLD: 96.40
+    };
+
+    const defaultFx = 1504.04;
 
     /*
       무료 가격 데이터용 우회 주소입니다.
@@ -474,7 +500,7 @@
 
           <div>
             <label for="price-${ticker}">현재가 / 원</label>
-            <input id="price-${ticker}" type="number" min="0" step="1" value="0" />
+            <input id="price-${ticker}" type="number" min="0" step="1" value="${defaultKrwPrices[ticker] || 0}" />
           </div>
 
           <div>
@@ -609,6 +635,20 @@
       update();
     }
 
+    function applyDefaultPriceInfo() {
+      const month = getCurrentMonthKey();
+
+      document.getElementById("data-month").textContent = month;
+      document.getElementById("data-date").textContent = "현재 기준 초기값";
+      document.getElementById("fx-display").textContent = defaultFx.toLocaleString("ko-KR", {
+        maximumFractionDigits: 2
+      });
+
+      refreshState.textContent = "초기값";
+      refreshMessage.textContent =
+        `현재 기준 초기값이 먼저 들어가 있습니다. QQQM $${defaultUsdPrices.QQQM}, SPYM $${defaultUsdPrices.SPYM}, QLD $${defaultUsdPrices.QLD}, 환율 ${defaultFx.toLocaleString("ko-KR")}원 기준입니다.`;
+    }
+
     async function refreshMonthlyPrices(force = false) {
       const month = getCurrentMonthKey();
       const cached = loadMonthlyData();
@@ -663,10 +703,12 @@
         applyPriceData(payload);
 
         refreshState.textContent = "완료";
-        refreshMessage.textContent = `자동 갱신 완료. 기준 거래일은 ${priceDate}이고, 환율 기준일은 ${fxData.date}입니다.`;
+        refreshMessage.textContent =
+          `자동 갱신 완료. 기준 거래일은 ${priceDate}이고, 환율 기준일은 ${fxData.date}입니다.`;
       } catch (error) {
-        refreshState.textContent = "실패";
-        refreshMessage.textContent = `자동 갱신에 실패했습니다. 아래 현재가를 직접 입력해도 계산은 정상 작동합니다. 오류: ${error.message}`;
+        refreshState.textContent = "초기값 사용";
+        refreshMessage.textContent =
+          `자동 갱신에 실패해서 현재 기준 초기값을 사용합니다. 아래 현재가를 직접 수정해도 됩니다. 오류: ${error.message}`;
       } finally {
         document.getElementById("force-refresh").disabled = false;
       }
@@ -825,7 +867,13 @@
       update();
     }
 
+    function setMonthly(amount) {
+      document.getElementById("monthly").value = amount;
+      update();
+    }
+
     createHoldingInputs();
+    applyDefaultPriceInfo();
 
     document.addEventListener("input", event => {
       if (event.target.matches("input")) {
@@ -839,8 +887,10 @@
 
     document.getElementById("clear-cache").addEventListener("click", () => {
       localStorage.removeItem(storageKey);
-      refreshState.textContent = "삭제됨";
-      refreshMessage.textContent = "저장된 이번 달 가격 데이터를 삭제했습니다. 재갱신 버튼을 누르면 새로 받아옵니다.";
+      applyDefaultPriceInfo();
+      refreshMessage.textContent =
+        "저장된 이번 달 가격 데이터를 삭제했습니다. 현재 기준 초기값으로 돌아왔습니다. 재갱신 버튼을 누르면 새로 받아옵니다.";
+      update();
     });
 
     update();
